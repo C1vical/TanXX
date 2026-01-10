@@ -20,14 +20,9 @@ public class Bullet extends Sprite {
     }
 
     public void update() {
-        if (!alive) return;
-
         // Move bullet in the direction of its angle
         worldX += Math.cos(angle) * speed * GameScreen.dt;
         worldY += Math.sin(angle) * speed * GameScreen.dt;
-
-        centerX = worldX + size / 2f;
-        centerY = worldY + size / 2f;
 
         // Reduce lifetime
         lifeTime -= GameScreen.dt;

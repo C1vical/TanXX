@@ -1,108 +1,143 @@
 import static com.raylib.Raylib.*;
 
-import java.util.ArrayList;
-
 import com.raylib.Raylib.Camera2D;
 import com.raylib.Raylib.Color;
+import com.raylib.Raylib.Image;
 import com.raylib.Raylib.Rectangle;
 import com.raylib.Raylib.Texture;
 import com.raylib.Raylib.Vector2;
 
-import static com.raylib.Colors.*;
 import static com.raylib.Helpers.newColor;
 import static com.raylib.Helpers.newRectangle;
 
+
 public class GameScreen extends Screen {
 
-    public static final int worldW = 1000;
-    public static final int worldH = 1000;
+    // World dimensions
+    public static final int worldW = 2000;
+    public static final int worldH = 2000;
+    public static final int borderSize = 5000;
 
+    // Grid dimensions
     public static final int tileSize = 20;
     public static final int rows = worldH / tileSize;
     public static final int cols = worldW / tileSize;
 
+    // World colours
     public static final Color worldGridColour = newColor(65, 65, 65, 255);
     public static final Color worldGridLineColour = newColor(78, 78, 78, 255);
     public static final Color borderGridColour = newColor(34, 34, 34, 255);
     public static final Color borderGridLineColour = newColor(45, 45, 45, 255);
 
-    public static final int borderSize = 1000;
+    // Textures
+    public Texture tank, barrel, bullet, square, triangle, pentagon;
 
-    public static float zoomLevel = 1.0f;
-
-    public Texture tank, barrel, bullet;
+    // Colours
+    public static final Color tankColor = newColor(32, 199, 129, 255);
+    public static final Color barrelColor = newColor(100, 99, 107, 255);
+    public static final Color bulletColor = newColor(32, 199, 129, 255);
+    public static final Color squareColor = newColor(214, 208, 30, 255);
+    public static final Color triangleColor = newColor(214, 51, 30, 255);
+    public static final Color pentagonColor = newColor(82, 58, 222, 255);
 
     // Tank
     public static Tank playerTank;
-    public static final int tankSize = 75;
-    public static float tankX = worldW / 2 - tankSize / 2;
-    public static float tankY = worldH / 2- tankSize / 2;
-    public static float tankCenterX;
-    public static float tankCenterY;
+    public static final int tankSize = 100;
     public static float angle;
-
     public static final int tankSpeed = 250; // pixels per second
 
+    // Barrel
     public static final int barrelW = tankSize;
     public static final int barrelH = tankSize / 2;
 
+    // Bullets
+    public static BulletPool bulletPool;
+    public static float reloadSpeed = 0.8f; // default 0.8f
+    public static float reloadTimer = 0f;
+    public static int bulletSize = barrelH; // default barrelH
+    public static int bulletSpeed = 275; // pixels per second
+
+    // Shapes
+    public static ShapePool shapePool;
+    public static int shapeSize = 80;
+    public static float shapeSpeed = 0.003f; // pixels per second
+    
+    // Camera
     public static Camera2D camera = new Camera2D();
 
+    // Camera zoom level
+    public static float zoomLevel = 1.0f;
+
+    // Frame time
     public static float dt;
 
-    public static boolean mouseDown = false, hitbox = false;
+    // Booleans
+    public static boolean hitbox = false;
 
-    // Bullets
-    public static ArrayList<Bullet> bullets = new ArrayList<>();
-    public static float reloadSpeed = 0.01f;
-    public static float reloadTimer = 0f;
-    public static int bulletSize = tankSize / 2 - 10;
-    public static int bulletSpeed = 200; // pixels per second
-    
+    // Lerp values
+    public static final float movementLerp = 0.25f;
+    public static final float zoomLerp = 0.1f;
 
     public GameScreen() {
-        InitWindow(Main.screenW, Main.screenH, "TanXX");
+
+        SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+        InitWindow(1280, 720, "TanXX");
+        SetWindowMinSize(1280, 720);
         SetTargetFPS(60);
-        camera = new Camera2D();
-        camera.offset(new Vector2().x(Main.screenW / 2f).y(Main.screenH / 2f));
-        camera.rotation(0);
+
+        Image icon = LoadImage("resources/assets/menu/XX.png");
+        SetWindowIcon(icon);
+        UnloadImage(icon);
 
         // Load Textures
-        loadTextures();
+        tank = resizeImage(LoadImage("resources/assets/game/tank.png"), tankSize, tankSize);
+        barrel = resizeImage(LoadImage("resources/assets/game/barrel.png"), barrelW, barrelH);
+        bullet = resizeImage(LoadImage("resources/assets/game/bullet.png"), bulletSize, bulletSize);
+        square = resizeImage(LoadImage("resources/assets/shapes/square.png"), shapeSize, shapeSize);
+        triangle = resizeImage(LoadImage("resources/assets/shapes/triangle.png"), shapeSize, shapeSize);
+        pentagon = resizeImage(LoadImage("resources/assets/shapes/pentagon.png"), shapeSize, shapeSize);
+        Texture[] shapeTextures = {square, triangle, pentagon};
+        Color[] shapeColours = {squareColor, triangleColor, pentagonColor};
 
-        BulletPool bulletPool = new BulletPool(256, bullet, bulletSize, bulletSpeed, RED);
+        playerTank = new Tank(worldW / 2 - tankSize / 2, worldH / 2 - tankSize / 2, tankSize, angle, tankSpeed, tank, tankColor);
+
+        // Set camera
+        camera = new Camera2D();
+        camera.offset(new Vector2().x(GetScreenWidth() / 2f).y(GetScreenHeight() / 2f));
+        camera.rotation(0);
+        camera.zoom(zoomLevel);
+        camera.target(new Vector2().x(playerTank.getCenterX()).y(playerTank.getCenterY()));
+
+        bulletPool = new BulletPool(256, bullet, bulletSize, bulletSpeed, bulletColor);
+        shapePool = new ShapePool(256, shapeTextures, shapeSize, shapeSpeed, shapeColours);
+
+        boolean firstFrame = true;
 
         while (!WindowShouldClose()) {
-            
             dt = GetFrameTime();
 
             BeginDrawing();
             
             ClearBackground(borderGridColour);
             BeginMode2D(camera);
-        
-            drawWorld();
-            getInput();
-
-            tankCenterX = tankX + tankSize / 2;
-            tankCenterY = tankY + tankSize / 2;
-
-            camera.target(new Vector2().x(tankCenterX).y(tankCenterY));
-
-            getZoomLevel();
-            camera.zoom(zoomLevel);
             
+            drawWorld();
+            
+            camera.offset(new Vector2().x(GetScreenWidth() / 2f).y(GetScreenHeight() / 2f));
+
+            // Smooth lerp
+            Vector2 desiredTarget = new Vector2().x(playerTank.getCenterX()).y(playerTank.getCenterY());
+            camera.target().x(camera.target().x() + (desiredTarget.x() - camera.target().x()) * movementLerp);
+            camera.target().y(camera.target().y() + (desiredTarget.y() - camera.target().y()) * movementLerp);
+
+            
+            
+            getZoomLevel();
+            float desiredZoom = zoomLevel;
+            camera.zoom(camera.zoom() + (desiredZoom - camera.zoom()) * zoomLerp);
+    
             Vector2 mouse = GetScreenToWorld2D(GetMousePosition(), camera);
-            angle = (float) Math.atan2(mouse.y() - tankCenterY, mouse.x() - tankCenterX);
-            Rectangle source = newRectangle(0, 0, barrelW, barrelH);
-            Rectangle dest = newRectangle(tankCenterX, tankCenterY, barrelW, barrelH);
-            Vector2 origin = new Vector2().x(0).y(barrelH / 2f);
-            DrawTexturePro(barrel, source, dest, origin, angle * (180f / (float) Math.PI), GRAY);
-
-            playerTank = new Tank(tankX, tankY, tankSize, angle, tankSpeed, tank, RED);
-            playerTank.draw();
-
-            // DrawTexturePro(tank, newRectangle(0, 0, tankSize, tankSize), newRectangle(tankCenterX, tankCenterY, tankSize, tankSize), new Vector2().x(tankSize / 2).y(tankSize / 2), angle * (180f / (float) Math.PI), RED);
+            angle = (float) Math.atan2(mouse.y() - playerTank.getCenterY(), mouse.x() - playerTank.getCenterX());
             
             if (IsKeyPressed(KEY_B)) {
                 hitbox = !hitbox;
@@ -113,23 +148,32 @@ public class GameScreen extends Screen {
             }
             
             if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) && reloadTimer <= 0f) {
-                float bulletX = tankCenterX + (float) Math.cos(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
-                float bulletY = tankCenterY + (float) Math.sin(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
+                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
+                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
                 bulletPool.shoot(bulletX, bulletY, angle);
                 reloadTimer = reloadSpeed;
             }
 
-            bulletPool.updateAndDraw();
+            if (IsKeyPressed(KEY_Q)) {
+                float orbitX = (float) (Math.random() * GameScreen.worldW);
+                float orbitY = (float) (Math.random() * GameScreen.worldH);
+                shapePool.create(orbitX, orbitY, (float) (Math.random() * Math.PI * 2));
+            }
 
-            // for (Bullet bullet : bullets) {
-            //     if (bullet.isAlive()) {
-            //         bullet.update();
-            //         bullet.draw();
-            //     } else {
-            //     bullets.remove(bullet);
-            //         break;
-            //     }
-            // }
+            // Draw in order
+
+            shapePool.updateAndDraw(); // Shapes
+            playerTank.update();
+            Rectangle source = newRectangle(0, 0, barrelW, barrelH);
+            Rectangle dest = newRectangle(playerTank.getCenterX(), playerTank.getCenterY(), barrelW, barrelH);
+            Vector2 origin = new Vector2().x(0).y(barrelH / 2f);
+            DrawTexturePro(barrel, source, dest, origin, angle * (180f / (float) Math.PI), barrelColor); // Barrel
+            
+            playerTank.setAngle(angle);
+            playerTank.draw(); // Tank
+
+           
+            bulletPool.updateAndDraw(); // Bullets
 
             EndMode2D();
             EndDrawing();
@@ -138,6 +182,9 @@ public class GameScreen extends Screen {
         UnloadTexture(tank);
         UnloadTexture(barrel);
         UnloadTexture(bullet);
+        UnloadTexture(square);
+        UnloadTexture(triangle);
+        UnloadTexture(pentagon);
         CloseWindow();
 
     }
@@ -171,37 +218,6 @@ public class GameScreen extends Screen {
         }
 
         if (zoomLevel < 0.5f) zoomLevel = 0.5f;
-        if (zoomLevel > 2.0f) zoomLevel = 2.0f;
-    }
-
-    public void getInput() {
-        float moveX = 0;
-        float moveY = 0;
-
-        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) moveY += 1;
-        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) moveY -= 1;
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))  moveX -= 1;
-        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) moveX += 1;
-        
-
-        if (moveX != 0 && moveY != 0) {
-            moveX /= Math.sqrt(2);
-            moveY /= Math.sqrt(2);
-        }
-
-        tankX += moveX * tankSpeed * dt;
-        tankY -= moveY * tankSpeed * dt;
-
-        if (tankX < -tankSize / 2) tankX = -tankSize / 2;
-        if (tankX > worldW - tankSize / 2) tankX = worldW - tankSize / 2;
-        if (tankY < -tankSize / 2)  tankY = -tankSize / 2;
-        if (tankY > worldH - tankSize / 2) tankY = worldH - tankSize / 2;
-    }
-
-    public void loadTextures() {
-        // Load textures
-        tank = resizeImage(LoadImage("resources/assets/game/tank.png"), tankSize, tankSize);
-        barrel = resizeImage(LoadImage("resources/assets/game/barrel.png"), barrelW, barrelH);
-        bullet = resizeImage(LoadImage("resources/assets/game/bullet.png"), bulletSize, bulletSize);
+        if (zoomLevel > 4.0f) zoomLevel = 4.0f;
     }
 }
