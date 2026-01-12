@@ -1,19 +1,28 @@
-import static com.raylib.Helpers.newColor;
-import static com.raylib.Helpers.newRectangle;
 import static com.raylib.Raylib.*;
-import static com.raylib.Colors.*;
 
 public class Tank extends Sprite {
+
+    // Bounce
+    float bounceStrength = 0.8f;
+    float bounceX = 0f;
+    float bounceY = 0f;
+
+    // Velocity
+    float velocityX = 0;
+    float velocityY = 0;
+
     // Recoil
     float recoilX = 0f;
     float recoilY = 0f;
+    float recoil;
 
     float decay = 5f;
 
-    public Tank(float worldX, float worldY, int width, int height, float angle, float speed, Texture texture, Color color) {
-        super(worldX, worldY, width, height, angle, speed, texture, color);
-        centerX = worldX + width / 2f;
-        centerY = worldY + height / 2f;
+    public Tank(float worldX, float worldY, float size, float angle, float speed, Texture texture, Color color, Color stroke) {
+        super(worldX, worldY, size, angle, speed, texture, color, stroke);
+        centerX = worldX + size / 2f;
+        centerY = worldY + size / 2f;
+        recoil = size * 1.8f;
     }
 
     public void update() {
@@ -24,45 +33,67 @@ public class Tank extends Sprite {
         if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) moveY -= 1;
         if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))  moveX -= 1;
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) moveX += 1;
-        
 
         if (moveX != 0 && moveY != 0) {
             moveX /= (float) Math.sqrt(2);
             moveY /= (float) Math.sqrt(2);
         }
 
-        worldX += moveX * speed * GameScreen.dt;
-        worldY -= moveY * speed * GameScreen.dt;
+        velocityX = moveX * speed + recoilX;
+        velocityY = moveY * speed + recoilY;
 
-        worldX += recoilX * GameScreen.dt;
-        worldY -= recoilY * GameScreen.dt;
+        worldX += (velocityX + bounceX) * GameScreen.dt;
+        worldY += (-velocityY + bounceY) * GameScreen.dt;
 
         recoilX -= recoilX * decay * GameScreen.dt;
         recoilY -= recoilY * decay * GameScreen.dt;
+        bounceX -= bounceX * decay * GameScreen.dt;
+        bounceY -= bounceY * decay * GameScreen.dt;
 
-        if (worldX < -width / 2f) worldX = -width / 2f;
-        if (worldX > GameScreen.worldW - width / 2f) worldX = GameScreen.worldW - width / 2f;
-        if (worldY < -height / 2f)  worldY = -height / 2f;
-        if (worldY > GameScreen.worldH - height / 2f) worldY = GameScreen.worldH - height / 2f;
 
-        centerX = worldX + width / 2f;
-        centerY = worldY + height / 2f;
+        if (worldX < -size / 2f && velocityX < 0) {
+            worldX = -size / 2f;
+            bounceX = -velocityX * bounceStrength;
+        }
+
+        if (worldX > GameScreen.worldW - size / 2f && velocityX > 0) {
+            worldX = GameScreen.worldW - size / 2f;
+            bounceX = -velocityX * bounceStrength;
+        }
+
+        if (worldY < -size / 2f && velocityY > 0) {
+            worldY = -size / 2f;
+            bounceY = velocityY * bounceStrength;
+        }
+
+        if (worldY > GameScreen.worldH - size / 2f && velocityY < 0) {
+            worldY = GameScreen.worldH - size / 2f;
+            bounceY = velocityY * bounceStrength;
+        }
+
+        if (Math.abs(bounceX) < 0.5f) bounceX = 0f;
+        if (Math.abs(bounceY) < 0.5f) bounceY = 0f;
+        if (Math.abs(recoilX) < 0.5f) recoilX = 0f;
+        if (Math.abs(recoilY) < 0.5f) recoilY = 0f;
+
+        centerX = worldX + size / 2f;
+        centerY = worldY + size / 2f;
     }
 
     public void draw() {
-        centerX = worldX + width / 2f;
-        centerY = worldY + height / 2f;
-        DrawCircleV(new Vector2().x(centerX).y(centerY), width / 2 + 5, newColor(55, 55, 55, 255));
-        DrawCircleV(new Vector2().x(centerX).y(centerY), width / 2, color);
+        centerX = worldX + size / 2f;
+        centerY = worldY + size / 2f;
+        DrawCircleV(new Vector2().x(centerX).y(centerY), size / 2 + strokeWidth, stroke);
+        DrawCircleV(new Vector2().x(centerX).y(centerY), size / 2, color);
     }
 
     public void applyRecoil() {
-        recoilX = -GameScreen.recoil * (float) Math.cos(angle);
-        recoilY = GameScreen.recoil * (float) Math.sin(angle);
+        recoilX = -recoil * (float) Math.cos(angle);
+        recoilY = recoil * (float) Math.sin(angle);
     }
 
     public void drawHitBox() {
-        DrawCircleLinesV(new Vector2().x(centerX).y(centerY), width / 2f, GREEN);
+        DrawCircleLinesV(new Vector2().x(centerX).y(centerY), size / 2 + strokeWidth, hitboxColor);
     }
 
     public void setAngle(float angle) {

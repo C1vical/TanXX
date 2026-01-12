@@ -1,16 +1,6 @@
 import static com.raylib.Raylib.*;
-import static com.raylib.Colors.*;
-import static com.raylib.Helpers.newRectangle;
 
 public class Shape extends Sprite {
-
-    public enum Type {
-        SQUARE,
-        TRIANGLE,
-        PENTAGON
-    }
-
-    private Type shapeType;
 
     private float rotationSpeed;
     private double orbitAngle;
@@ -19,10 +9,12 @@ public class Shape extends Sprite {
     private float orbitX;
     private float orbitY;
 
+    private int type;
+
     private boolean alive = true;
 
-    public Shape(float orbitX, float orbitY, float width, float height, float angle, float speed, Texture texture, Color color, Type shapeType) {
-        super(0, 0, width, height, angle, speed, texture, color);
+    public Shape(float orbitX, float orbitY, float size, float angle, float speed, Texture texture, Color color, Color stroke, int type) {
+        super(0, 0, size, angle, speed, texture, color, stroke);
         
         this.orbitX = orbitX;
         this.orbitY = orbitY;
@@ -39,7 +31,7 @@ public class Shape extends Sprite {
 
         alive = false;
 
-        this.shapeType = shapeType;
+        this.type = type;
     }
 
     public void update() {
@@ -47,32 +39,36 @@ public class Shape extends Sprite {
         orbitAngle += orbitAngleSpeed * GameScreen.dt;
         // Update rotation angle
         angle += rotationSpeed * GameScreen.dt;;
-        // // Calculate new world position based on circular orbit
-        worldX = (float) (orbitX + Math.cos(orbitAngle) * orbitRadius) - width / 2f;
-        worldY = (float) (orbitY + Math.sin(orbitAngle) * orbitRadius) - height / 2f;
+
+        centerX = (float) (orbitX + Math.cos(orbitAngle) * orbitRadius);
+        centerY = (float) (orbitY + Math.sin(orbitAngle) * orbitRadius);
+
+        worldX = centerX - size / 2f;
+        worldY = centerY - size / 2f;
     }
 
-//    public void draw() {
-//        switch (shapeType) {
-//            case SQUARE -> {
-//                Draw
-//                DrawPolyLines(new Vector2().x(centerX).y(centerY), 4, (float) (width * Math.sqrt(2) / 2), angle * (180f / (float) Math.PI) + 45, GREEN);
-//            }
-//            case TRIANGLE -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 3, (float) (width / Math.sqrt(3)), angle * 180f / (float) Math.PI, GREEN);
-//            case PENTAGON -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 5, height / 2f, angle * 180f / (float) Math.PI, GREEN);
-//        }
-//    }
+    public void draw() {
+        switch (type) {
+            case 0 -> {
+                DrawPoly(new Vector2().x(centerX).y(centerY), 4, size + strokeWidth, angle * (180f / (float) Math.PI), stroke);
+                DrawPoly(new Vector2().x(centerX).y(centerY), 4, size, angle * (180f / (float) Math.PI), color);
+            }
+            case 1 -> {
+                DrawPoly(new Vector2().x(centerX).y(centerY), 3, size + strokeWidth, angle * 180f / (float) Math.PI, stroke);
+                DrawPoly(new Vector2().x(centerX).y(centerY), 3, size, angle * 180f / (float) Math.PI, color);
+            }
+            default -> {
+                DrawPoly(new Vector2().x(centerX).y(centerY), 5, size + strokeWidth, angle * 180f / (float) Math.PI, stroke);
+                DrawPoly(new Vector2().x(centerX).y(centerY), 5, size, angle * 180f / (float) Math.PI, color);
+            }
+        }
+    }
 
     public void drawHitBox()  {
-        switch (shapeType) {
-            case SQUARE -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 4, (float) (width * Math.sqrt(2) / 2), angle * (180f / (float) Math.PI) + 45, GREEN);
-//            case TRIANGLE -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 3, (float) (width / Math.sqrt(3)), angle * 180f / (float) Math.PI, GREEN);
-//            case PENTAGON -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 5, height / 2f, angle * 180f / (float) Math.PI, GREEN);
-//            case TRIANGLE -> DrawPolyLines(new Vector2().x(centerX - 10f * (float) Math.cos(angle)).y(centerY - 10f * (float) Math.sin(angle)), 3, (float) (width / Math.sqrt(3)), angle * 180f / (float) Math.PI, GREEN);
-//            case PENTAGON -> DrawPolyLines(new Vector2().x(centerX - 7f * (float) Math.cos(angle)).y(centerY - 7f * (float) Math.sin(angle)), 5, height / 2f, angle * 180f / (float) Math.PI, GREEN);
-//            case SQUARE ->DrawPolyLines(new Vector2().x(centerX).y(centerY), 4, (float) (width * Math.sqrt(2) / 2), angle * (180f / (float) Math.PI) + 45, GREEN);
-            case TRIANGLE -> DrawCircleLinesV(new Vector2().x(centerX).y(centerY), GameScreen.squareWidth / 2f, GREEN);
-            case PENTAGON -> DrawCircleLinesV(new Vector2().x(centerX).y(centerY), GameScreen.squareWidth / 2f, GREEN);
+        switch (type) {
+            case 0 -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 4, size + strokeWidth, angle * (180f / (float) Math.PI), hitboxColor);
+            case 1 -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 3, size + strokeWidth, angle * 180f / (float) Math.PI, hitboxColor);
+            default -> DrawPolyLines(new Vector2().x(centerX).y(centerY), 5, size + strokeWidth, angle * 180f / (float) Math.PI, hitboxColor);
         }
     }
 

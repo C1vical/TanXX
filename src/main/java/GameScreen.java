@@ -11,9 +11,9 @@ import static com.raylib.Helpers.newRectangle;
 public class GameScreen extends GameState {
 
     // World dimensions
-    public static final int worldW = 4000;
-    public static final int worldH = 4000;
-    public static final int borderSize = 4000;
+    public static final int worldW = 2000;
+    public static final int worldH = 2000;
+    public static final int borderSize = 2000;
 
     // Grid dimensions
     public final int tileSize = 20;
@@ -25,49 +25,44 @@ public class GameScreen extends GameState {
     public final Color borderGridLineColour = newColor(45, 45, 45, 255);
 
     // Colors
-    public final Color tankColor = newColor(252, 186, 3, 255);
+    public final Color tankColor = newColor(212, 25, 125, 255);
+    public final Color tankStrokeColor = newColor(55, 55, 55, 255);
     public final Color barrelColor = newColor(100, 99, 107, 255);
-    public final Color bulletColor = newColor(252, 186, 3, 255);
+    public final Color barrelStrokeColor = newColor(55, 55, 55, 255);
+    public final Color bulletColor = newColor(212, 25, 125, 255);
+    public final Color bulletStrokeColor = newColor(55, 55, 55, 255);
     public final Color squareColor = newColor(214, 208, 30, 255);
+    public final Color squareStrokeColor = newColor(158, 152, 24, 255);
     public final Color triangleColor = newColor(214, 51, 30, 255);
+    public final Color triangleStrokeColor = newColor(148, 30, 15, 255);
     public final Color pentagonColor = newColor(82, 58, 222, 255);
+    public final Color pentagonStrokeColor = newColor(59, 36, 212, 255);
 
     // Tank
     public Texture tank;
     public static Tank playerTank;
-    public static final int tankWidth = 125;
-    public static final int tankHeight = 125;
+    public static final int tankSize = 75;
     public static float angle;
-    public static final int tankSpeed = 300; // pixels per second
+    public static final int tankSpeed = 200; // pixels per second
 
     // Barrel
     public Texture barrel;
-    public static final int barrelW = tankHeight;
-    public static final int barrelH = tankHeight / 2;
+    public static final int barrelW = tankSize;
+    public static final int barrelH = tankSize / 2;
 
     // Bullets
     public Texture bullet;
-    public static float reloadSpeed = 0.3f; // default 0.8f
+    public static float reloadSpeed = 0.15f; // default 0.8f
     public static float reloadTimer = 0f;
-    public static int bulletWidth = barrelH; // default barrelH
-    public static int bulletHeight = barrelH;
+    public static int bulletSize = barrelH; // default barrelH
     public static int bulletSpeed = 400; // pixels per second
     List<Bullet> bullets = new ArrayList<>();
 
     // Shapes
     public Texture square, triangle, pentagon;
-
-    public static float squareWidth = 80;
-    public static float squareHeight = 80;
-
-    public static float triangleWidth = (float) (squareWidth / 2f * Math.sqrt(3));
-    public static float triangleHeight = squareHeight;
-
-    public static float pentagonWidth = (float) (squareWidth / 2f * (Math.sqrt(5 + 2 * Math.sqrt(5))));
-    public static float pentagonHeight = (float) (squareHeight / 2f * (1 + Math.sqrt(5)));
-
+    public static int shapeRadius = 25;
     List<Shape> shapes = new ArrayList<>();
-    private static final int startShapes = 15;
+    private static final int startShapes = 30;
 
     // Settings icon
     public Texture settings;
@@ -92,26 +87,23 @@ public class GameScreen extends GameState {
     public static boolean hitbox = false, autoFire = false, autoSpin = false;
 
     // Lerp values
-    public final float movementLerp = 0.25f;
+    public final float movementLerp = 0.1f;
     public final float zoomLerp = 0.1f;
-
-    // Recoil speed
-    public static final float recoil = 100;
 
     ScreenType requestedScreen = ScreenType.GAME;
 
     public GameScreen() {
         // Load Textures
-        tank = resizeImage(LoadImage("resources/game/tank.png"), tankWidth, tankHeight);
+        tank = resizeImage(LoadImage("resources/game/tank.png"), tankSize, tankSize);
         barrel = resizeImage(LoadImage("resources/game/barrel.png"), barrelW, barrelH);
-        bullet = resizeImage(LoadImage("resources/game/bullet.png"), bulletWidth, bulletHeight);
-        square = resizeImage(LoadImage("resources/game/square.png"), (int) squareWidth, (int) squareHeight);
-        triangle = resizeImage(LoadImage("resources/game/triangle.png"), (int) triangleWidth, (int) triangleHeight);
-        pentagon = resizeImage(LoadImage("resources/game/pentagon.png"), (int) pentagonWidth, (int) pentagonHeight);
+        bullet = resizeImage(LoadImage("resources/game/bullet.png"), bulletSize, bulletSize);
+        square = resizeImage(LoadImage("resources/game/square.png"), shapeRadius, shapeRadius);
+        triangle = resizeImage(LoadImage("resources/game/triangle.png"), shapeRadius, shapeRadius);
+        pentagon = resizeImage(LoadImage("resources/game/pentagon.png"), shapeRadius, shapeRadius);
         settings = resizeImage(LoadImage("resources/game/settings.png"), settingsSize, settingsSize);
 
         // Set player tank
-        playerTank = new Tank(worldW / 2f - tankWidth / 2f, worldH / 2f - tankHeight / 2f, tankWidth, tankHeight, angle, tankSpeed, tank, tankColor);
+        playerTank = new Tank(worldW / 2f - tankSize / 2f, worldH / 2f - tankSize / 2f, tankSize, angle, tankSpeed, tank, tankColor, tankStrokeColor);
 
         // Set camera
         camera = new Camera2D();
@@ -132,6 +124,8 @@ public class GameScreen extends GameState {
         // Get frame time
         dt = GetFrameTime();
 
+        Vector2 mouseScreen = GetMousePosition();
+
         // Camera
         camera.offset(new Vector2().x(GetScreenWidth() / 2f).y(GetScreenHeight() / 2f));
 
@@ -148,6 +142,7 @@ public class GameScreen extends GameState {
 
             // Input
             Vector2 mouse = GetScreenToWorld2D(GetMousePosition(), camera);
+
             if (!autoSpin) {
                 angle = (float) Math.atan2(mouse.y() - playerTank.getCenterY(), mouse.x() - playerTank.getCenterX());
             } else {
@@ -162,7 +157,7 @@ public class GameScreen extends GameState {
                 reloadTimer -= dt;
             }
             
-            if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) && reloadTimer <= 0f) {
+            if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) && reloadTimer <= 0f && !isHover(settingsRect, mouseScreen)) {
                 fireBullet();
                 playerTank.applyRecoil();
             }
@@ -193,12 +188,10 @@ public class GameScreen extends GameState {
 
             for (Bullet b : bullets) b.update();
 
-            // Bullet vs Shape collisions
             checkCollisions();
         }
-       
-        Vector2 mouse1 = GetMousePosition();
-        if (isHover(settingsRect, mouse1)) {
+
+        if (isHover(settingsRect, mouseScreen)) {
             settingsHover = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                 showSettings = true;
@@ -208,13 +201,6 @@ public class GameScreen extends GameState {
         if (IsKeyPressed(KEY_SPACE)) {
             showSettings = false;
         }
-    }
-
-    private void fireBullet() {
-        float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
-        float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
-        bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
-        reloadTimer = reloadSpeed;
     }
 
     @Override
@@ -266,15 +252,15 @@ public class GameScreen extends GameState {
         
         if (showSettings) {
             DrawRectangle(0, 0, screenW, screenH, newColor(0, 0, 0, 180));
-            int boxW = 400, boxH = 200, boxX = (screenW - boxW) / 2, boxY = (screenH - boxH) / 2;
+            int boxW = 1000, boxH = 600, boxX = (screenW - boxW) / 2, boxY = (screenH - boxH) / 2;
 
             Rectangle rect = newRectangle(boxX, boxY, boxW, boxH);
 
             DrawRectangleRounded(rect, 0.2f, 10, RAYWHITE);
             DrawRectangleRoundedLines(rect, 0.2f, 10, DARKGRAY);
 
-            DrawText("Settings", boxX + boxW / 2 - MeasureText("Settings", 30) / 2, boxY + 20, 30, BLACK);
-            DrawText("Press SPACE to close", boxX + boxW / 2 - MeasureText("Press SPACE to close", 14) / 2,  boxY + 165, 14, BLACK);
+            DrawText("Settings", boxX + boxW / 2 - MeasureText("Settings", 50) / 2, boxY + 20, 50, BLACK);
+            DrawText("Press SPACE to close", boxX + boxW / 2 - MeasureText("Press SPACE to close", 20) / 2,  boxY + 165, 20, BLACK);
         }
 
         fps = GetFPS();
@@ -360,41 +346,21 @@ public class GameScreen extends GameState {
     private void addShape() {
         int type = (int) (Math.random() * 3);
 
-        Texture tex = switch (type) {
-            case 0 -> square;
-            case 1 -> triangle;
-            default -> pentagon;
-        };
-
-        Color col = switch (type) {
-            case 0 -> squareColor;
-            case 1 -> triangleColor;
-            default -> pentagonColor;
-        };
-
-        float width = switch (type) {
-            case 0 -> squareWidth;
-            case 1 -> triangleWidth;
-            default -> pentagonWidth;
-        };
-
-        float height = switch (type) {
-            case 0 -> squareHeight;
-            case 1 -> triangleHeight;
-            default -> pentagonHeight;
-        };
-
-        Shape.Type shapeType;
-        switch (type) {
-            case 0 -> shapeType = Shape.Type.SQUARE;
-            case 1 -> shapeType = Shape.Type.TRIANGLE;
-            default -> shapeType = Shape.Type.PENTAGON;
-        }
-
         float orbitX = (float) (Math.random() * GameScreen.worldW);
         float orbitY = (float) (Math.random() * GameScreen.worldH);
 
-        shapes.add(new Shape(orbitX, orbitY, width, height, 0, 0, tex, col, shapeType));
+        switch (type) {
+            case 0 -> shapes.add(new Shape(orbitX, orbitY, shapeRadius, 0, 0, square, squareColor, squareStrokeColor, 0));
+            case 1 -> shapes.add(new Shape(orbitX, orbitY, shapeRadius, 0, 0, triangle, triangleColor, triangleStrokeColor, 1));
+            default -> shapes.add(new Shape(orbitX, orbitY, shapeRadius, 0, 0, pentagon, pentagonColor, pentagonStrokeColor, 2));
+        }
+    }
+
+    private void fireBullet() {
+        float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletSize / 2f) - bulletSize / 2f;
+        float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletSize / 2f) - bulletSize / 2f;
+        bullets.add(new Bullet(bulletX, bulletY, bulletSize, angle, bulletSpeed, bullet, bulletColor, bulletStrokeColor));
+        reloadTimer = reloadSpeed;
     }
 
     public void checkCollisions() {
@@ -406,7 +372,7 @@ public class GameScreen extends GameState {
             while (shapeIt.hasNext()) {
                 Shape s = shapeIt.next();
 
-                if (CheckCollisionCircles(new Vector2().x(b.getCenterX()).y(b.getCenterY()),b.width / 2f, new Vector2().x(s.getCenterX()).y(s.getCenterY()), squareWidth / 2f)) {
+                if (CheckCollisionCircles(new Vector2().x(b.getCenterX()).y(b.getCenterY()),b.size / 2f, new Vector2().x(s.getCenterX()).y(s.getCenterY()), shapeRadius / 2f)) {
                     bulletIt.remove();
                     shapeIt.remove();
                     break;
@@ -417,7 +383,7 @@ public class GameScreen extends GameState {
         Iterator<Shape> shapeIt = shapes.iterator();
         while (shapeIt.hasNext()) {
             Shape s = shapeIt.next();
-            if (CheckCollisionCircles(new Vector2().x(s.getCenterX()).y(s.getCenterY()),s.width / 2f, new Vector2().x(playerTank.getCenterX()).y(playerTank.getCenterY()), playerTank.width / 2f)) {
+            if (CheckCollisionCircles(new Vector2().x(s.getCenterX()).y(s.getCenterY()),s.size / 2f, new Vector2().x(playerTank.getCenterX()).y(playerTank.getCenterY()), playerTank.size / 2f)) {
                 shapeIt.remove();
                 break;
             }

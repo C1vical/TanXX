@@ -1,6 +1,5 @@
 import static com.raylib.Raylib.*;
-import static com.raylib.Colors.*;
-import static com.raylib.Helpers.newRectangle;
+import static com.raylib.Helpers.newColor;
 
 public class Sprite {
     // Coordinates in the world 
@@ -18,14 +17,18 @@ public class Sprite {
     protected float speed;
 
     // Sprite dimensions
-    protected float width;
-    protected float height;
+    protected float size;
 
     // Sprite texture
     protected Texture texture;
 
     // Sprite colour
     protected Color color;
+    protected Color stroke;
+    protected int strokeWidth = 5;
+
+    // Hitbox color
+    protected Color hitboxColor = newColor(17, 184, 83, 255);
 
     // Sprite health
     protected float health;
@@ -38,24 +41,15 @@ public class Sprite {
     protected boolean alive;
 
 
-    public Sprite(float worldX, float worldY, float width, float height, float angle, float speed, Texture texture, Color color) {
+    public Sprite(float worldX, float worldY, float size, float angle, float speed, Texture texture, Color color, Color stroke) {
         this.worldX = worldX;
         this.worldY = worldY;
-        this.width = width;
-        this.height = height;
+        this.size = size;
         this.angle = angle;
         this.speed = speed;
         this.texture = texture;
         this.color = color;
-    }
-
-    public void draw() {
-        centerX = worldX + width / 2f;
-        centerY = worldY + height / 2f;
-        Rectangle source = newRectangle(0, 0, width, height);
-        Rectangle dest = newRectangle(centerX, centerY, width, height);
-        Vector2 origin = new Vector2().x(width / 2f).y(height / 2f);
-        DrawTexturePro(texture, source, dest, origin, angle * (180f / (float) Math.PI), color);
+        this.stroke = stroke;
     }
 
     public float getCenterX() {
