@@ -18,10 +18,17 @@ public class BulletPool {
         if (index >= bullets.length) index = 0; // circular buffer
     }
 
-    public void updateAndDraw() {
+    public void update() {
         for (Bullet b : bullets) {
             if (b.isAlive()) {
                 b.update();
+            }
+        }
+    }
+
+    public void draw() {
+        for (Bullet b : bullets) {
+            if (b.isAlive()) {
                 b.draw();
             }
         }

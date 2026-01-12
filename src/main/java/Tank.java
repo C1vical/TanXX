@@ -1,10 +1,15 @@
 import static com.raylib.Raylib.*;
+import static com.raylib.Colors.*;
 
 public class Tank extends Sprite {
     public Tank(float worldX, float worldY, int size, float angle, float speed, Texture texture, Color color) {
         super(worldX, worldY, size, angle, speed, texture, color);
         centerX = worldX + size / 2f;
         centerY = worldY + size / 2f;
+    }
+
+    public void spawn(float worldX, float worldY, float angle) {
+
     }
 
     public void update() {
@@ -32,6 +37,10 @@ public class Tank extends Sprite {
 
         centerX = worldX + size / 2f;
         centerY = worldY + size / 2f;
+    }
+
+    public void drawHitBox() {
+        DrawCircleLinesV(new Vector2().x(centerX).y(centerY), size / 2, YELLOW);
     }
 
     public void setAngle(float angle) {

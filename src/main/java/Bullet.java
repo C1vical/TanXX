@@ -1,10 +1,11 @@
 import static com.raylib.Raylib.*;
+import static com.raylib.Colors.*;
 
 public class Bullet extends Sprite {
     // Lifetime in frames
-    private float lifeTime = 2f;
+    private float lifeTime;
     // Bullet alive status
-    private boolean alive = true;
+    private boolean alive;
 
     public Bullet(float worldX, float worldY, int size, float angle, float speed, Texture texture, Color color) {
         super(worldX, worldY, size, angle, speed, texture, color);
@@ -16,7 +17,7 @@ public class Bullet extends Sprite {
         this.worldY = worldY;
         this.angle = angle;
         alive = true;
-        lifeTime = 2f;
+        lifeTime = 3f;
     }
 
     public void update() {
@@ -27,6 +28,10 @@ public class Bullet extends Sprite {
         // Reduce lifetime
         lifeTime -= GameScreen.dt;
         if (lifeTime <= 0f) alive = false;
+    }
+
+    public void drawHitBox() {
+        DrawCircleLinesV(new Vector2().x(centerX).y(centerY), size / 2, YELLOW);
     }
 
     public boolean isAlive() {

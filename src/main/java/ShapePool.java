@@ -19,10 +19,17 @@ public class ShapePool {
         if (index >= shapes.length) index = 0; // circular buffer
     }
 
-    public void updateAndDraw() {
+    public void update() {
         for (Shape s : shapes) {
             if (s.isAlive()) {
                 s.update();
+            }
+        }
+    }
+
+    public void draw() {
+        for (Shape s : shapes) {
+            if (s.isAlive()) {
                 s.draw();
             }
         }

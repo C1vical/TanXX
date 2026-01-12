@@ -2,7 +2,7 @@ import static com.raylib.Raylib.*;
 import static com.raylib.Colors.*;
 import static com.raylib.Helpers.newRectangle;
 
-public class Sprite {
+abstract class Sprite {
     // Coordinates in the world 
     protected float worldX;
     protected float worldY;
@@ -40,6 +40,9 @@ public class Sprite {
         this.color = color;
     }
 
+    abstract public void spawn(float worldX, float worldY, float angle);
+    abstract public void update();
+
     public void draw() {
         centerX = worldX + size / 2f;
         centerY = worldY + size / 2f;
@@ -50,10 +53,12 @@ public class Sprite {
         DrawTexturePro(texture, source, dest, origin, angle * (180f / (float) Math.PI), color);
 
         if (GameScreen.hitbox) {
-            // DrawRectangleLinesEx(newRectangle(worldX, worldY, size, size), 5, YELLOW);
-            DrawCircleLinesV(new Vector2().x(centerX).y(centerY), size / 2, YELLOW);
+            drawHitBox();
         }
     }
+
+    abstract void drawHitBox();
+    
 
     public float getWorldX() {
         return worldX;

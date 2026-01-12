@@ -1,4 +1,4 @@
-import static com.raylib.Raylib.*;
+import com.raylib.Raylib.*;
 
 public class Shape extends Sprite {
     private float rotationSpeed;
@@ -15,10 +15,14 @@ public class Shape extends Sprite {
         
         this.orbitX = orbitX;
         this.orbitY = orbitY;
-        orbitAngleSpeed = Math.random() < 0.5 ? 0.0015f : -0.0015f;
-        orbitRadius = 30 + (float)(Math.random() * 70);
-        rotationSpeed = Math.random() < 0.5 ? 0.0015f : -0.0015f;
 
+        // Random speed between 0.0001 and 0.0002, random sign
+        orbitAngleSpeed = (float) (Math.random() * 0.000 + 0.001f) * (Math.random() < 0.5 ? 1 : -1);
+        rotationSpeed = (float) (Math.random() * 0.001 + 0.001f) * (Math.random() < 0.5 ? 1 : -1);
+
+        // Random orbit radius between 30 and 100
+        orbitRadius = 30 + (float)(Math.random() * 70);
+        
         worldX = (float) (orbitX + Math.cos(orbitAngle) * orbitRadius);
         worldY = (float) (orbitY + Math.sin(orbitAngle) * orbitRadius);
 
@@ -42,6 +46,10 @@ public class Shape extends Sprite {
         // // Calculate new world position based on circular orbit
         worldX = (float) (orbitX + Math.cos(orbitAngle) * orbitRadius) - size / 2;
         worldY = (float) (orbitY + Math.sin(orbitAngle) * orbitRadius) - size / 2;
+    }
+
+    public void drawHitBox() {
+        
     }
 
     public boolean isAlive() {
