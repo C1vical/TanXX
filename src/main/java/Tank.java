@@ -8,10 +8,6 @@ public class Tank extends Sprite {
         centerY = worldY + size / 2f;
     }
 
-    public void spawn(float worldX, float worldY, float angle) {
-
-    }
-
     public void update() {
         float moveX = 0;
         float moveY = 0;

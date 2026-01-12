@@ -2,7 +2,7 @@ import static com.raylib.Raylib.*;
 import static com.raylib.Colors.*;
 import static com.raylib.Helpers.newRectangle;
 
-abstract class Sprite {
+public class Sprite {
     // Coordinates in the world 
     protected float worldX;
     protected float worldY;
@@ -23,11 +23,15 @@ abstract class Sprite {
     // Sprite texture
     protected Texture texture;
 
+    // Sprite colour
     protected Color color;
 
     // Sprite health
     protected double health;
     protected double maxHealth;
+
+    // Alive status
+    protected boolean alive;
 
 
     public Sprite(float worldX, float worldY, int size, float angle, float speed, Texture texture, Color color) {
@@ -40,9 +44,6 @@ abstract class Sprite {
         this.color = color;
     }
 
-    abstract public void spawn(float worldX, float worldY, float angle);
-    abstract public void update();
-
     public void draw() {
         centerX = worldX + size / 2f;
         centerY = worldY + size / 2f;
@@ -53,12 +54,9 @@ abstract class Sprite {
         DrawTexturePro(texture, source, dest, origin, angle * (180f / (float) Math.PI), color);
 
         if (GameScreen.hitbox) {
-            drawHitBox();
+//            drawHitBox();
         }
     }
-
-    abstract void drawHitBox();
-    
 
     public float getWorldX() {
         return worldX;
@@ -76,6 +74,12 @@ abstract class Sprite {
         return centerY;
     }
 
+    public boolean isAlive() {
+        return alive;
+    }
 
+    public void setAlive(boolean alive) {
+        this.alive = alive;
+    }
 }
     

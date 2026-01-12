@@ -13,7 +13,7 @@ public class Main {
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(defaultScreenW, defaultScreenH, "TanXX");
         SetWindowMinSize(1280, 720);
-        SetTargetFPS(60);
+        SetTargetFPS(500);
 
         Image icon = LoadImage("resources/menu/icon.png");
         SetWindowIcon(icon);
