@@ -38,7 +38,7 @@ public class GameScreen extends GameState {
     public static final int tankWidth = 125;
     public static final int tankHeight = 125;
     public static float angle;
-    public static final int tankSpeed = 222; // pixels per second
+    public static final int tankSpeed = 300; // pixels per second
 
     // Barrel
     public Texture barrel;
@@ -51,7 +51,7 @@ public class GameScreen extends GameState {
     public static float reloadTimer = 0f;
     public static int bulletWidth = barrelH; // default barrelH
     public static int bulletHeight = barrelH;
-    public static int bulletSpeed = 200; // pixels per second
+    public static int bulletSpeed = 400; // pixels per second
     List<Bullet> bullets = new ArrayList<>();
 
     // Shapes
@@ -89,14 +89,14 @@ public class GameScreen extends GameState {
     public Rectangle rect =  newRectangle(boxX, boxY, boxW, boxH);
 
     // Booleans
-    public static boolean hitbox = false, autoFire = false, autoSpin = false, shoot = false;
+    public static boolean hitbox = false, autoFire = false, autoSpin = false;
 
     // Lerp values
     public final float movementLerp = 0.25f;
     public final float zoomLerp = 0.1f;
 
     // Recoil speed
-    public static final float recoil = 50;
+    public static final float recoil = 100;
 
     ScreenType requestedScreen = ScreenType.GAME;
 
@@ -163,11 +163,8 @@ public class GameScreen extends GameState {
             }
             
             if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) && reloadTimer <= 0f) {
-                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
-                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
-                bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
-                shoot = true;
-                reloadTimer = reloadSpeed;
+                fireBullet();
+                playerTank.applyRecoil();
             }
 
             if (IsKeyPressed(KEY_Q)) {
@@ -179,15 +176,8 @@ public class GameScreen extends GameState {
             }
 
             if(autoFire && reloadTimer <= 0f) {
-                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
-                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
-                bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
-                shoot = true;
-                reloadTimer = reloadSpeed;
-            }
-
-            if (reloadTimer > 0f) {
-                shoot = false;
+                fireBullet();
+                playerTank.applyRecoil();
             }
 
             if (IsKeyPressed(KEY_C)) {
@@ -218,6 +208,13 @@ public class GameScreen extends GameState {
         if (IsKeyPressed(KEY_SPACE)) {
             showSettings = false;
         }
+    }
+
+    private void fireBullet() {
+        float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
+        float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
+        bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
+        reloadTimer = reloadSpeed;
     }
 
     @Override

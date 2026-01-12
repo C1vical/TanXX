@@ -4,6 +4,12 @@ import static com.raylib.Raylib.*;
 import static com.raylib.Colors.*;
 
 public class Tank extends Sprite {
+    // Recoil
+    float recoilX = 0f;
+    float recoilY = 0f;
+
+    float decay = 5f;
+
     public Tank(float worldX, float worldY, int width, int height, float angle, float speed, Texture texture, Color color) {
         super(worldX, worldY, width, height, angle, speed, texture, color);
         centerX = worldX + width / 2f;
@@ -25,16 +31,14 @@ public class Tank extends Sprite {
             moveY /= (float) Math.sqrt(2);
         }
 
-        float recoilX = 0f;
-        float recoilY = 0f;
+        worldX += moveX * speed * GameScreen.dt;
+        worldY -= moveY * speed * GameScreen.dt;
 
-        if (GameScreen.shoot) {
-            recoilX = - GameScreen.recoil * (float) Math.cos(angle);
-            recoilY = GameScreen.recoil * (float) Math.sin(angle);
-        }
+        worldX += recoilX * GameScreen.dt;
+        worldY -= recoilY * GameScreen.dt;
 
-        worldX += (moveX * speed + recoilX) * GameScreen.dt;
-        worldY -= (moveY * speed + recoilY) * GameScreen.dt;
+        recoilX -= recoilX * decay * GameScreen.dt;
+        recoilY -= recoilY * decay * GameScreen.dt;
 
         if (worldX < -width / 2f) worldX = -width / 2f;
         if (worldX > GameScreen.worldW - width / 2f) worldX = GameScreen.worldW - width / 2f;
@@ -50,6 +54,11 @@ public class Tank extends Sprite {
         centerY = worldY + height / 2f;
         DrawCircleV(new Vector2().x(centerX).y(centerY), width / 2 + 5, newColor(55, 55, 55, 255));
         DrawCircleV(new Vector2().x(centerX).y(centerY), width / 2, color);
+    }
+
+    public void applyRecoil() {
+        recoilX = -GameScreen.recoil * (float) Math.cos(angle);
+        recoilY = GameScreen.recoil * (float) Math.sin(angle);
     }
 
     public void drawHitBox() {
