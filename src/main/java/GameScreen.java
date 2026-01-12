@@ -11,14 +11,12 @@ import static com.raylib.Helpers.newRectangle;
 public class GameScreen extends GameState {
 
     // World dimensions
-    public static final int worldW = 2000;
-    public static final int worldH = 2000;
-    public static final int borderSize = 2000;
+    public static final int worldW = 4000;
+    public static final int worldH = 4000;
+    public static final int borderSize = 4000;
 
     // Grid dimensions
     public final int tileSize = 20;
-    public final int rows = worldH / tileSize;
-    public final int cols = worldW / tileSize;
 
     // World colors
     public final Color worldGridColour = newColor(65, 65, 65, 255);
@@ -37,26 +35,37 @@ public class GameScreen extends GameState {
     // Tank
     public Texture tank;
     public static Tank playerTank;
-    public static final int tankSize = 125;
+    public static final int tankWidth = 125;
+    public static final int tankHeight = 125;
     public static float angle;
-    public static final int tankSpeed = 250; // pixels per second
+    public static final int tankSpeed = 222; // pixels per second
 
     // Barrel
     public Texture barrel;
-    public static final int barrelW = tankSize;
-    public static final int barrelH = tankSize / 2;
+    public static final int barrelW = tankHeight;
+    public static final int barrelH = tankHeight / 2;
 
     // Bullets
     public Texture bullet;
-    public static float reloadSpeed = 0.9f; // default 0.8f
+    public static float reloadSpeed = 0.3f; // default 0.8f
     public static float reloadTimer = 0f;
-    public static int bulletSize = barrelH; // default barrelH
-    public static int bulletSpeed = 300; // pixels per second
+    public static int bulletWidth = barrelH; // default barrelH
+    public static int bulletHeight = barrelH;
+    public static int bulletSpeed = 200; // pixels per second
     List<Bullet> bullets = new ArrayList<>();
 
     // Shapes
     public Texture square, triangle, pentagon;
-    public static int shapeSize = 80;
+
+    public static float squareWidth = 80;
+    public static float squareHeight = 80;
+
+    public static float triangleWidth = (float) (squareWidth / 2f * Math.sqrt(3));
+    public static float triangleHeight = squareHeight;
+
+    public static float pentagonWidth = (float) (squareWidth / 2f * (Math.sqrt(5 + 2 * Math.sqrt(5))));
+    public static float pentagonHeight = (float) (squareHeight / 2f * (1 + Math.sqrt(5)));
+
     List<Shape> shapes = new ArrayList<>();
     private static final int startShapes = 15;
 
@@ -80,26 +89,29 @@ public class GameScreen extends GameState {
     public Rectangle rect =  newRectangle(boxX, boxY, boxW, boxH);
 
     // Booleans
-    public static boolean hitbox = false;
+    public static boolean hitbox = false, autoFire = false, autoSpin = false, shoot = false;
 
     // Lerp values
     public final float movementLerp = 0.25f;
     public final float zoomLerp = 0.1f;
 
+    // Recoil speed
+    public static final float recoil = 50;
+
     ScreenType requestedScreen = ScreenType.GAME;
 
     public GameScreen() {
         // Load Textures
-        tank = resizeImage(LoadImage("resources/game/tank.png"), tankSize, tankSize);
+        tank = resizeImage(LoadImage("resources/game/tank.png"), tankWidth, tankHeight);
         barrel = resizeImage(LoadImage("resources/game/barrel.png"), barrelW, barrelH);
-        bullet = resizeImage(LoadImage("resources/game/bullet.png"), bulletSize, bulletSize);
-        square = resizeImage(LoadImage("resources/game/square.png"), shapeSize, shapeSize);
-        triangle = resizeImage(LoadImage("resources/game/triangle.png"), shapeSize, shapeSize);
-        pentagon = resizeImage(LoadImage("resources/game/pentagon.png"), shapeSize, shapeSize);
+        bullet = resizeImage(LoadImage("resources/game/bullet.png"), bulletWidth, bulletHeight);
+        square = resizeImage(LoadImage("resources/game/square.png"), (int) squareWidth, (int) squareHeight);
+        triangle = resizeImage(LoadImage("resources/game/triangle.png"), (int) triangleWidth, (int) triangleHeight);
+        pentagon = resizeImage(LoadImage("resources/game/pentagon.png"), (int) pentagonWidth, (int) pentagonHeight);
         settings = resizeImage(LoadImage("resources/game/settings.png"), settingsSize, settingsSize);
 
         // Set player tank
-        playerTank = new Tank(worldW / 2 - tankSize / 2, worldH / 2 - tankSize / 2, tankSize, angle, tankSpeed, tank, tankColor);
+        playerTank = new Tank(worldW / 2f - tankWidth / 2f, worldH / 2f - tankHeight / 2f, tankWidth, tankHeight, angle, tankSpeed, tank, tankColor);
 
         // Set camera
         camera = new Camera2D();
@@ -136,7 +148,11 @@ public class GameScreen extends GameState {
 
             // Input
             Vector2 mouse = GetScreenToWorld2D(GetMousePosition(), camera);
-            angle = (float) Math.atan2(mouse.y() - playerTank.getCenterY(), mouse.x() - playerTank.getCenterX());
+            if (!autoSpin) {
+                angle = (float) Math.atan2(mouse.y() - playerTank.getCenterY(), mouse.x() - playerTank.getCenterX());
+            } else {
+                angle += 1f * dt;
+            }
             
             if (IsKeyPressed(KEY_B)) {
                 hitbox = !hitbox;
@@ -147,14 +163,35 @@ public class GameScreen extends GameState {
             }
             
             if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_LEFT)) && reloadTimer <= 0f) {
-                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
-                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletSize / 2) - bulletSize / 2;
-                bullets.add(new Bullet(bulletX, bulletY, bulletSize, angle, bulletSpeed, bullet, bulletColor));
+                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
+                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
+                bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
+                shoot = true;
                 reloadTimer = reloadSpeed;
             }
 
             if (IsKeyPressed(KEY_Q)) {
                 addShape();
+            }
+
+            if (IsKeyPressed(KEY_E)) {
+                autoFire = !autoFire;
+            }
+
+            if(autoFire && reloadTimer <= 0f) {
+                float bulletX = playerTank.getCenterX() + (float) Math.cos(angle) * (barrelW + bulletWidth / 2f) - bulletWidth / 2f;
+                float bulletY = playerTank.getCenterY() + (float) Math.sin(angle) * (barrelW + bulletHeight / 2f) - bulletHeight / 2f;
+                bullets.add(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, angle, bulletSpeed, bullet, bulletColor));
+                shoot = true;
+                reloadTimer = reloadSpeed;
+            }
+
+            if (reloadTimer > 0f) {
+                shoot = false;
+            }
+
+            if (IsKeyPressed(KEY_C)) {
+                autoSpin = !autoSpin;
             }
 
             if(shapes.size() < startShapes) {
@@ -163,29 +200,11 @@ public class GameScreen extends GameState {
 
             for (Shape s : shapes) s.update();
             playerTank.update();
+
             for (Bullet b : bullets) b.update();
+
             // Bullet vs Shape collisions
-            Iterator<Bullet> bulletIt = bullets.iterator();
-            while (bulletIt.hasNext()) {
-                Bullet b = bulletIt.next();
-
-                Iterator<Shape> shapeIt = shapes.iterator();
-                while (shapeIt.hasNext()) {
-                    Shape s = shapeIt.next();
-
-                    float bulletCenterX = b.worldX + b.size / 2f;
-                    float bulletCenterY = b.worldY + b.size / 2f;
-                    float shapeCenterX = s.worldX + s.size / 2f;
-                    float shapeCenterY = s.worldY + s.size / 2f;
-
-                    if (Collision.circleCollision(bulletCenterX, bulletCenterY, b.size / 2f, shapeCenterX, shapeCenterY, s.size / 2f)) {
-                        bulletIt.remove();
-                        shapeIt.remove();
-                        break;
-                    }
-                }
-            }
-
+            checkCollisions();
         }
        
         Vector2 mouse1 = GetMousePosition();
@@ -341,8 +360,7 @@ public class GameScreen extends GameState {
         }
     }
 
-
-    public void addShape() {
+    private void addShape() {
         int type = (int) (Math.random() * 3);
 
         Texture tex = switch (type) {
@@ -357,9 +375,55 @@ public class GameScreen extends GameState {
             default -> pentagonColor;
         };
 
+        float width = switch (type) {
+            case 0 -> squareWidth;
+            case 1 -> triangleWidth;
+            default -> pentagonWidth;
+        };
+
+        float height = switch (type) {
+            case 0 -> squareHeight;
+            case 1 -> triangleHeight;
+            default -> pentagonHeight;
+        };
+
+        Shape.Type shapeType;
+        switch (type) {
+            case 0 -> shapeType = Shape.Type.SQUARE;
+            case 1 -> shapeType = Shape.Type.TRIANGLE;
+            default -> shapeType = Shape.Type.PENTAGON;
+        }
+
         float orbitX = (float) (Math.random() * GameScreen.worldW);
         float orbitY = (float) (Math.random() * GameScreen.worldH);
 
-        shapes.add(new Shape(orbitX, orbitY, shapeSize, 0, 0, tex, col));
+        shapes.add(new Shape(orbitX, orbitY, width, height, 0, 0, tex, col, shapeType));
+    }
+
+    public void checkCollisions() {
+        Iterator<Bullet> bulletIt = bullets.iterator();
+        while (bulletIt.hasNext()) {
+            Bullet b = bulletIt.next();
+
+            Iterator<Shape> shapeIt = shapes.iterator();
+            while (shapeIt.hasNext()) {
+                Shape s = shapeIt.next();
+
+                if (CheckCollisionCircles(new Vector2().x(b.getCenterX()).y(b.getCenterY()),b.width / 2f, new Vector2().x(s.getCenterX()).y(s.getCenterY()), squareWidth / 2f)) {
+                    bulletIt.remove();
+                    shapeIt.remove();
+                    break;
+                }
+            }
+        }
+
+        Iterator<Shape> shapeIt = shapes.iterator();
+        while (shapeIt.hasNext()) {
+            Shape s = shapeIt.next();
+            if (CheckCollisionCircles(new Vector2().x(s.getCenterX()).y(s.getCenterY()),s.width / 2f, new Vector2().x(playerTank.getCenterX()).y(playerTank.getCenterY()), playerTank.width / 2f)) {
+                shapeIt.remove();
+                break;
+            }
+        }
     }
 }

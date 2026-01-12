@@ -18,7 +18,8 @@ public class Sprite {
     protected float speed;
 
     // Sprite dimensions
-    protected int size;
+    protected float width;
+    protected float height;
 
     // Sprite texture
     protected Texture texture;
@@ -27,17 +28,21 @@ public class Sprite {
     protected Color color;
 
     // Sprite health
-    protected double health;
-    protected double maxHealth;
+    protected float health;
+    protected float maxHealth;
+
+    // Stats
+    protected float damage;
 
     // Alive status
     protected boolean alive;
 
 
-    public Sprite(float worldX, float worldY, int size, float angle, float speed, Texture texture, Color color) {
+    public Sprite(float worldX, float worldY, float width, float height, float angle, float speed, Texture texture, Color color) {
         this.worldX = worldX;
         this.worldY = worldY;
-        this.size = size;
+        this.width = width;
+        this.height = height;
         this.angle = angle;
         this.speed = speed;
         this.texture = texture;
@@ -45,25 +50,12 @@ public class Sprite {
     }
 
     public void draw() {
-        centerX = worldX + size / 2f;
-        centerY = worldY + size / 2f;
-        Rectangle source = newRectangle(0, 0, size, size);
-        Rectangle dest = newRectangle(centerX, centerY, size, size);
-        Vector2 origin = new Vector2().x(size / 2f).y(size / 2f);
-
+        centerX = worldX + width / 2f;
+        centerY = worldY + height / 2f;
+        Rectangle source = newRectangle(0, 0, width, height);
+        Rectangle dest = newRectangle(centerX, centerY, width, height);
+        Vector2 origin = new Vector2().x(width / 2f).y(height / 2f);
         DrawTexturePro(texture, source, dest, origin, angle * (180f / (float) Math.PI), color);
-
-        if (GameScreen.hitbox) {
-//            drawHitBox();
-        }
-    }
-
-    public float getWorldX() {
-        return worldX;
-    }
-
-    public float getWorldY() {
-        return worldY;
     }
 
     public float getCenterX() {
@@ -76,10 +68,6 @@ public class Sprite {
 
     public boolean isAlive() {
         return alive;
-    }
-
-    public void setAlive(boolean alive) {
-        this.alive = alive;
     }
 }
     

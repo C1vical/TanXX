@@ -92,11 +92,11 @@ public class MenuScreen extends GameState {
 
         float logoW = 625 * ratioW;
         float logoH = 250 * ratioH;
-        logoRect = newRectangle(screenW / 2 - logoW / 2, 75 * ratioH, logoW, logoH);
+        logoRect = newRectangle(screenW / 2f - logoW / 2, 75 * ratioH, logoW, logoH);
 
         float playW = 600f * ratioW;
         float playH = 240f * ratioH;
-        playRect = newRectangle(screenW / 2 - playW / 2, screenH / 2, playW, playH);
+        playRect = newRectangle(screenW / 2f - playW / 2, screenH / 2f, playW, playH);
 
         float credW = 200f * ratioW;
         float credH = 80f * ratioH;
